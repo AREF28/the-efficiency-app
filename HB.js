@@ -1,10 +1,8 @@
-// Array to act as our single source of truth for the data
 let habits = [];
 
-// 1. Load data from the device's localStorage
 function loadData() {
   const storedHabits = localStorage.getItem("myHabitTrackerData");
-
+  // to get the data from local storage
   if (storedHabits) {
     // If data exists, parse it from a string back into an array
     habits = JSON.parse(storedHabits);
@@ -22,18 +20,14 @@ function loadData() {
     ];
   }
 
-  // Build the UI based on the loaded data
   renderTable();
 }
-
-// 2. Save data to the device
+// API---- Save the current state of habits to local storage
 function saveData() {
-  // Convert the habits array to a string and store it
   localStorage.setItem("myHabitTrackerData", JSON.stringify(habits));
   updateScore();
 }
-
-// 3. Generate the table HTML dynamically
+//  here is the basicly template for rendering the tables
 function renderTable() {
   const tbody = document.getElementById("habitBody");
   tbody.innerHTML = ""; // Clear out the existing rows
@@ -41,10 +35,10 @@ function renderTable() {
   habits.forEach((habit, habitIndex) => {
     const tr = document.createElement("tr");
 
-    // Start with the habit name
+    // habit name
     let html = `<td>${habit.name}</td>`;
 
-    // Create the 7 checkboxes, checking if they were previously saved as true
+    // Create the 7 checkboxes checking if they were previously saved as true
     for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
       const isChecked = habit.checks[dayIndex] ? "checked" : "";
       html += `<td><input type="checkbox" ${isChecked} onchange="toggleCheck(${habitIndex}, ${dayIndex})"></td>`;
@@ -70,7 +64,7 @@ function toggleCheck(habitIndex, dayIndex) {
   saveData();
 }
 
-// 5. Add a new habit
+// Adding a new habit
 function addHabit() {
   const input = document.getElementById("habitInput");
   const habitName = input.value.trim();
@@ -93,7 +87,7 @@ function addHabit() {
   renderTable();
 }
 
-// 6. Delete a habit
+// Deleteing a habit
 function deleteHabit(habitIndex) {
   // Remove 1 item at the specified index
   habits.splice(habitIndex, 1);
@@ -102,7 +96,7 @@ function deleteHabit(habitIndex) {
   renderTable();
 }
 
-// 7. Calculate and update the score UI
+// Calculate and update the score UI
 function updateScore() {
   let checkedCount = 0;
   let totalCheckboxes = habits.length * 7;

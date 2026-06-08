@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Habit Tracker</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      :root {
+        --primary-color: #4caf50;
+        --bg-color: #f4f4f9;
+        --text-color: #333;
+        --border-color: #ddd;
+      }
+
+      body {
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        max-width: 800px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+      }
+
+      h1 {
+        text-align: center;
+        color: var(--primary-color);
+      }
+
+      h2 {
+        text-align: center;
+      }
+
+      .controls {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        justify-content: center;
+      }
+
+      input[type="text"] {
+        padding: 8px 12px;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        font-size: 1rem;
+        width: 250px;
+      }
+
+      button {
+        padding: 8px 16px;
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: background-color 0.2s;
+      }
+
+      button:hover {
+        background-color: #45a049;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      th,
+      td {
+        padding: 12px 15px;
+        text-align: center;
+        border-bottom: 1px solid var(--border-color);
+      }
+
+      th {
+        background-color: var(--primary-color);
+        color: white;
+        font-weight: 600;
+      }
+
+      td:first-child {
+        text-align: left;
+        font-weight: 500;
+      }
+
+      tr:last-child td {
+        border-bottom: none;
+      }
+
+      tr:hover {
+        background-color: #f9f9f9;
+      }
+
+      input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+        accent-color: var(--primary-color);
+      }
+
+      .delete-btn {
+        background-color: #ff4c4c;
+        padding: 4px 8px;
+        font-size: 0.8rem;
+      }
+
+      .delete-btn:hover {
+        background-color: #e60000;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Weekly Habit Tracker</h1>
+    <h2>Score: <span id="score">0</span></h2>
+    <h2>Percentage: <span id="percentage">0</span>%</h2>
+
+    <div class="controls">
+      <input
+        type="text"
+        id="habitInput"
+        placeholder="Enter a new habit (e.g., Drink Water)"
+      />
+      <button onclick="addHabit()">Add Habit</button>
+    </div>
+
+    <table id="habitTable">
+      <thead>
+        <tr>
+          <th>Habit</th>
+          <th>Mon</th>
+          <th>Tue</th>
+          <th>Wed</th>
+          <th>Thu</th>
+          <th>Fri</th>
+          <th>Sat</th>
+          <th>Sun</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="habitBody"></tbody>
+    </table>
+
+    <script>
+      // Array to act as our single source of truth for the data
+      let habits = [];
+
+      // 1. Load data from the device's localStorage
+      function loadData() {
+        const storedHabits = localStorage.getItem("myHabitTrackerData");
+
+        if (storedHabits) {
+          // If data exists, parse it from a string back into an array
+          habits = JSON.parse(storedHabits);
+        } else {
+          // Default habits if it's their first time loading the app
+          habits = [
+            {
+              name: "Read 10 Pages",
+              checks: [false, false, false, false, false, false, false],
+            },
+            {
+              name: "Drink 4L of water",
+              checks: [false, false, false, false, false, false, false],
+            },
+          ];
+        }
+
+        // Build the UI based on the loaded data
+        renderTable();
+      }
+
+      // 2. Save data to the device
+      function saveData() {
+        // Convert the habits array to a string and store it
+        localStorage.setItem("myHabitTrackerData", JSON.stringify(habits));
+        updateScore();
+      }
+
+      // 3. Generate the table HTML dynamically
+      function renderTable() {
+        const tbody = document.getElementById("habitBody");
+        tbody.innerHTML = ""; // Clear out the existing rows
+
+        habits.forEach((habit, habitIndex) => {
+          const tr = document.createElement("tr");
+
+          // Start with the habit name
+          let html = `<td>${habit.name}</td>`;
+
+          // Create the 7 checkboxes, checking if they were previously saved as true
+          for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
+            const isChecked = habit.checks[dayIndex] ? "checked" : "";
+            html += `<td><input type="checkbox" ${isChecked} onchange="toggleCheck(${habitIndex}, ${dayIndex})"></td>`;
+          }
+
+          // Add the delete button
+          html += `<td><button class="delete-btn" onclick="deleteHabit(${habitIndex})">Delete</button></td>`;
+
+          tr.innerHTML = html;
+          tbody.appendChild(tr);
+        });
+
+        // Make sure the score reflects the newly rendered table
+        updateScore();
+      }
+
+      function toggleCheck(habitIndex, dayIndex) {
+        // Flip the boolean value (true to false, or false to true)
+        habits[habitIndex].checks[dayIndex] =
+          !habits[habitIndex].checks[dayIndex];
+
+        saveData();
+      }
+
+      function addHabit() {
+        const input = document.getElementById("habitInput");
+        const habitName = input.value.trim();
+
+        if (habitName === "") {
+          alert("Please enter a habit name.");
+          return;
+        }
+
+        habits.push({
+          name: habitName,
+          checks: [false, false, false, false, false, false, false],
+        });
+
+        input.value = "";
+
+        saveData();
+        renderTable();
+      }
+
+      function deleteHabit(habitIndex) {
+        // Remove 1 item at the specified index
+        habits.splice(habitIndex, 1);
+
+        saveData();
+        renderTable();
+      }
+
+      function updateScore() {
+        let checkedCount = 0;
+        let totalCheckboxes = habits.length * 7;
+
+        habits.forEach((habit) => {
+          habit.checks.forEach((check) => {
+            if (check) checkedCount++;
+          });
+        });
+
+        let score = checkedCount * 10;
+        let percentage =
+          totalCheckboxes > 0 ? (checkedCount / totalCheckboxes) * 100 : 0;
+
+        document.getElementById("score").textContent = score;
+        document.getElementById("percentage").textContent =
+          percentage.toFixed(2);
+      }
+
+      document
+        .getElementById("habitInput")
+        .addEventListener("keypress", function (e) {
+          if (e.key === "Enter") {
+            addHabit();
+          }
+        });
+
+      window.onload = loadData;
+    </script>
+  </body>
+</html>
